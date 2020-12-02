@@ -1,5 +1,6 @@
 import Control.Applicative hiding ((<|>))
 import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec.Number
 import Data.List
 import Data.Char
 import Data.Either
@@ -7,7 +8,6 @@ import Data.Algebra.Boolean (xor)
 
 inputGrammer = endBy line eol
 eol = string "\n"
-decimal = foldl' (\a i -> a * 10 + digitToInt i) 0 <$> many1 digit
 
 data PasswordWithPolicy = Policy Int Int Char String deriving (Show)
 
@@ -21,7 +21,7 @@ parseInput = parse inputGrammer ""
 
 myRights :: Either ParseError [PasswordWithPolicy] -> [PasswordWithPolicy]
 myRights (Right b) = b
-myRights (Left _) =[] 
+myRights (Left _)  = [] 
 
 part1 :: PasswordWithPolicy -> Bool
 part1 (Policy minOcc maxOcc letter text) = isInRange minOcc maxOcc (calcOcc text)
@@ -29,7 +29,8 @@ part1 (Policy minOcc maxOcc letter text) = isInRange minOcc maxOcc (calcOcc text
           calcOcc text = length $ filter (== letter) text
 
 part2 :: PasswordWithPolicy -> Bool
-part2 (Policy pos1 pos2 letter text) = xor (charAtPosEquals text pos1 letter) (charAtPosEquals text pos2 letter)
+part2 (Policy pos1 pos2 letter text) = xor (charAtPosEquals text pos1 letter) 
+                                           (charAtPosEquals text pos2 letter)
     where charAtPosEquals text pos letter = (text!!(pos-1)) == letter
 
 main = do
