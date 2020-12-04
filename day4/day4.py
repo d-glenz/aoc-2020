@@ -1,11 +1,11 @@
 import fileinput
 import re
+from typing import Dict
 
-def valid_passport(passport):
-    fields = 'byr iyr eyr hgt hcl ecl pid cid'.split()
-    required_fields = 'byr iyr eyr hgt hcl ecl pid'.split()
+def validate_passport(passport: Dict[str, str], short: bool=False) -> bool:
+    """  Requirements:
 
-    """byr (Birth Year) - four digits; at least 1920 and at most 2002.
+    byr (Birth Year) - four digits; at least 1920 and at most 2002.
     iyr (Issue Year) - four digits; at least 2010 and at most 2020.
     eyr (Expiration Year) - four digits; at least 2020 and at most 2030.
     hgt (Height) - a number followed by either cm or in:
@@ -15,36 +15,42 @@ def valid_passport(passport):
     ecl (Eye Color) - exactly one of: amb blu brn gry grn hzl oth.
     pid (Passport ID) - a nine-digit number, including leading zeroes.
     cid (Country ID) - ignored, missing or not."""
-    if len([field for field in required_fields if field in current_data.keys()]) < len(required_fields):
+
+    fields = 'byr iyr eyr hgt hcl ecl pid cid'.split()
+    required_fields = 'byr iyr eyr hgt hcl ecl pid'.split()
+
+    if len([field for field in required_fields if field in passport.keys()]) < len(required_fields):
         print("not all fields")
         return False
-    if len(passport['byr']) != 4 or not (1920 <= int(passport['byr']) <= 2002):
-        print(f"{passport['byr']=}")
+
+    if short:
+        return True
+
+    if not check_date(passport, 'byr', 4, 1920, 2002):
         return False
-    if len(passport['iyr']) != 4 or not (2010 <= int(passport['iyr']) <= 2020):
-        print(f"{passport['iyr']=}")
+    if not check_date(passport, 'iyr', 4, 2010, 2020):
         return False
-    if len(passport['eyr']) != 4 or not (2020 <= int(passport['eyr']) <= 2030):
-        print(f"{passport['eyr']=}")
+    if not check_date(passport, 'eyr', 4, 2020, 2030):
         return False
 
     try:
         unit = passport['hgt'][-2:]
         height = int(passport['hgt'][:-2])
-        if unit not in 'cm in'.split():
-            print(f"{unit=}")
-            return False
-        if unit == "cm":
-            if not (150 <= height <= 193):
-                print(f"cm {height=}")
-                return False
-        else:
-            if not (59 <= height <= 76):
-                print(f"in {height=}")
-                return False
     except:
-        print(f"{height=}")
+        print(f"{passport['hgt'][:-2]=}")
         return False
+
+    if unit not in 'cm in'.split():
+        print(f"{unit=}")
+        return False
+    if unit == "cm":
+        if not (150 <= height <= 193):
+            print(f"cm {height=}")
+            return False
+    else:
+        if not (59 <= height <= 76):
+            print(f"in {height=}")
+            return False
 
 
     if len(passport['hcl']) !=7 or passport['hcl'][0] != "#" or not re.match('^[0-9a-f]{6}$', passport['hcl'][1:]):
@@ -53,32 +59,47 @@ def valid_passport(passport):
     if passport['ecl'] not in "amb blu brn gry grn hzl oth".split():
         print(f"{passport['ecl']=}")
         return False
+
     try:
         int(passport['pid'])
-        if len(passport['pid']) != 9:
-            print(f"len {passport['pid']=}")
-            return False
     except:
         print(f"{passport['pid']=}")
+        return False
+
+    if len(passport['pid']) != 9:
+        print(f"len {passport['pid']=}")
         return False
 
     return True
 
 
+def check_date(passport: Dict[str, str], key: str, num_digits: int, min_year: int, max_year: int) -> bool:
+    if len(passport[key]) != num_digits or not (min_year <= int(passport[key]) <= max_year):
+        print(f"{passport[key]=}")
+        return False
+    return True
 
-valid_passports = 0
-all_identities = []
-current_data = {}
-for line in fileinput.input():
-    line = line.strip()
-    if line == "":
-        if valid_passport(current_data):
-            valid_passports +=1
-        all_identities.append(current_data)
-        current_data = {}
-        continue
-    for item in line.split():
-        k,v = item.split(':')
-        current_data[k]=v
 
-print(valid_passports)
+
+def main() -> None:
+    valid_passports_1 = 0
+    valid_passports_2 = 0
+    current_data: Dict[str, str] = {}
+    for line in fileinput.input():
+        line = line.strip()
+        if line == "":
+            if validate_passport(current_data, short=True):
+                valid_passports_1 +=1
+            if validate_passport(current_data):
+                valid_passports_2 +=1
+            current_data = {}
+            continue
+        for item in line.split():
+            k,v = item.split(':')
+            current_data[k]=v
+
+    print(f"Solution 1: {valid_passports_1}")
+    print(f"Solution 2: {valid_passports_2}")
+
+if __name__ == "__main__":
+    main()
