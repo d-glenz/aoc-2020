@@ -130,6 +130,7 @@ dmypy.json
 
 # other
 *.real
+*.copy
 
 # haskell
 *.hi
