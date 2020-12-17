@@ -2,12 +2,16 @@ import fileinput
 import itertools
 import math
 import copy
-
+import sys
+from enum import Enum
 from typing import List, Dict, Tuple
 
 
 DIRS = list(set(itertools.product([-1,0,1], repeat=4)) - set([(0,0,0,0)]))
 
+class Status(Enum):
+    Active = '#'
+    Inactive = '.'
 
 class Board:
     def __init__(self, data: List[str]) -> None:
@@ -16,15 +20,15 @@ class Board:
         self.grid = {}
         for x, row in enumerate(data):
             for y, col in enumerate(row):
-                self.grid[(x, y, z, w)] = col
-        self.xmin: int = int( math.inf)
-        self.xmax: int = int(-math.inf)
-        self.ymin: int = int( math.inf)
-        self.ymax: int = int(-math.inf)
-        self.zmin: int = int( math.inf)
-        self.zmax: int = int(-math.inf)
-        self.wmin: int = int( math.inf)
-        self.wmax: int = int(-math.inf)
+                self.grid[(x, y, z, w)] = Status(col)
+        self.xmin: int =  sys.maxsize
+        self.xmax: int = -sys.maxsize
+        self.ymin: int =  sys.maxsize
+        self.ymax: int = -sys.maxsize
+        self.zmin: int =  sys.maxsize
+        self.zmax: int = -sys.maxsize
+        self.wmin: int =  sys.maxsize
+        self.wmax: int = -sys.maxsize
         self.update_bounds()
 
 
@@ -49,24 +53,25 @@ class Board:
                 self.wmax = int(w)
 
 
-    def __getitem__(self, tup: Tuple[int, int, int, int]) -> str:
+    def __getitem__(self, tup: Tuple[int, int, int, int]) -> Status:
         if tup not in self.grid:
-            return '.'
+            return Status.Inactive
         return self.grid[tup]
 
-    def __setitem__(self, tup: Tuple[int, int, int, int], item: str) -> None:
+    def __setitem__(self, tup: Tuple[int, int, int, int], item: Status) -> None:
         self.grid[tup] = item
         self.update_bounds()
 
-    def neighbors(self, tup: Tuple[int, int, int, int]) -> List[str]:
+    def neighbors(self, tup: Tuple[int, int, int, int]) -> List[Status]:
         x, y, z, w = tup
         result = []
         for neighbor in DIRS:
-            result.append(self.grid.get((x+neighbor[0], y+neighbor[1], z+neighbor[2], w+neighbor[3]), '.'))
+            result.append(self.grid.get((x+neighbor[0], y+neighbor[1], z+neighbor[2], w+neighbor[3]),
+                                        Status.Inactive))
         return result
 
     def num_active(self) -> int:
-        return len([x for x in self.grid.values() if x == '#'])
+        return len([x for x in self.grid.values() if x == Status.Active])
 
 
 def one_generation(board: Board) -> Board:
@@ -75,11 +80,11 @@ def one_generation(board: Board) -> Board:
         for y in range(board.ymin-1, board.ymax+2):
             for z in range(board.zmin-1, board.zmax+2):
                 for w in range(board.wmin-1, board.wmax+2):
-                    num_neighbors = prev.neighbors((x, y, z, w)).count('#')
-                    if prev[(x, y, z, w)] == '#' and not (num_neighbors == 2 or num_neighbors == 3):
-                        board[(x, y, z, w)] = '.'
-                    elif prev[(x, y, z, w)] == '.' and num_neighbors == 3:
-                        board[(x, y, z, w)] = '#'
+                    num_neighbors = prev.neighbors((x, y, z, w)).count(Status.Active)
+                    if prev[(x, y, z, w)] == Status.Active and not (num_neighbors == 2 or num_neighbors == 3):
+                        board[(x, y, z, w)] = Status.Inactive
+                    elif prev[(x, y, z, w)] == Status.Inactive and num_neighbors == 3:
+                        board[(x, y, z, w)] = Status.Active
     return board
 
 
