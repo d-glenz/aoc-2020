@@ -1,31 +1,9 @@
 import re
 import fileinput
 from itertools import takewhile, dropwhile
-from typing import List, Union, Tuple, Dict
-from copy import deepcopy
+from typing import List, Tuple, Dict
 
 MAXDEPTH = 10
-
-
-class PossibilityListList:
-    def __init__(self) -> None:
-        self.list_of_lists: List[List[int]] = [[]]
-
-    def __repr__(self) -> str:
-        return "\n".join(map(lambda x: "".join(map(str, x)), self.list_of_lists))
-
-    def append(self, element: Union[int, List[int]]) -> None:
-        if isinstance(element, int):
-            for lst in self.list_of_lists:
-                lst.append(element)
-
-        else:
-            factor = len(element)
-            out = []
-            for lst in self.list_of_lists:
-                for i in range(factor):
-                    out.append(deepcopy(lst) + [element[i]])
-            self.list_of_lists = out
 
 
 class Rule:
