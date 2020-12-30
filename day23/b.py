@@ -3,12 +3,18 @@ import sys
 
 
 class Node:
-    def __init__(self, data):
+    def __init__(self, data, head=None):
         self.data = data
         self.next = None
+        self.head = head if head is not None else self
 
     def __repr__(self):
         return self.data
+
+    def getnext(self):
+        if self.next is None:
+            return self.head
+        return self.next
 
 
 class LinkedList:
@@ -16,8 +22,10 @@ class LinkedList:
         self.head = None
         self.lowest = sys.maxsize
         self.highest = -sys.maxsize
+        self.len = 1
         if nodes is not None:
             node = Node(data=nodes.pop(0))
+            head = node
             self.head = node
             for elem in nodes:
                 elem = int(elem)
@@ -25,8 +33,9 @@ class LinkedList:
                     self.lowest = elem
                 if elem > self.highest:
                     self.highest = elem
-                node.next = Node(data=elem)
+                node.next = Node(data=elem, head=head)
                 node = node.next
+                self.len += 1
 
     def __repr__(self):
         node = self.head
@@ -40,6 +49,8 @@ class LinkedList:
     def __getitem__(self, item):
         node = self.head
         num = 0
+        print(f"__getitem__: {item=}, {self.len=}")
+        item = item if item < self.len else item - self.len
         while node is not None:
             if num == item:
                 ll = LinkedList()
@@ -64,25 +75,7 @@ class LinkedList:
                 return i
             i += 1
             node = node.next
-
-    def shift(self, dist):
-        if dist == 0:
-            return self
-
-        i = 0
-        old_head = self.head
-        node = self.head
-        while node is not None:
-            if i == dist - 1:
-                self.head = node.next
-                node.next = None
-                node = self.head
-                continue
-            elif node.next is None:
-                break
-            node = node.next
-            i += 1
-        return self
+        print(f"{item=} not found")
 
 
 def move(cups, current_idx):
@@ -91,28 +84,30 @@ def move(cups, current_idx):
 
     # the crab picks up three cups...
     three = cups[current_idx+1]
+    print(f"cups[{current_idx=}+4].head={cups[current_idx+4]}")
     cups[current_idx].head.next = cups[current_idx+4].head
-    three.head.next.next.next = None
+    three.head.getnext().getnext().next = None
 
     # selections a destination cup
     destination_label = current - 1
     while destination_label in three.nodes():
-        print(f"decreasing destination_label from {destination_label}", end='')
+        # print(f"decreasing destination_label from {destination_label}", end='')
         destination_label = destination_label - 1 if destination_label - 1 > cups.lowest else cups.highest
-        print(f" to {destination_label}")
+        # print(f" to {destination_label}")
 
     destination_idx = cups.find(destination_label)
-    print(f"idx: {destination_idx}")
+    print(f"idx: {destination_idx} {destination_label=}")
 
     # The crab places the cups it just picked up so that they are immediately clockwise of the destination cup.
     after = cups[destination_idx].head.next
-    three.head.next.next.next = after
+    three.head.getnext().getnext().next = after
     cups[destination_idx].head.next = three.head
 
     # shift
     new_idx = cups.find(current)
-    print(f"need to shift current_idx={current_idx} new_idx={new_idx} by {new_idx - current_idx}")
-    #cups = cups.shift(new_idx - current_idx)
+    current_idx = new_idx
+    # print(f"need to shift current_idx={current_idx} new_idx={new_idx} by {new_idx - current_idx}")
+    # cups = cups.shift(new_idx - current_idx)
 
     # The crab selects a new current cup: the cup which is immediately clockwise of the current cup.
     return cups, current_idx + 1
@@ -126,9 +121,6 @@ for line in fileinput.input():
 print(cups)
 
 current_idx = 0
-cups, current_idx = move(cups, current_idx)
-print(cups)
-cups, current_idx = move(cups, current_idx)
-print(cups)
-cups, current_idx = move(cups, current_idx)
-print(cups)
+for i in range(10):
+    cups, current_idx = move(cups, current_idx)
+    print(cups)
